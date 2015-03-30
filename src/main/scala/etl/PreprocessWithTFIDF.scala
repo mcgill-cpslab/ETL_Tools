@@ -61,12 +61,12 @@ object PreprocessWithTFIDF {
     allFileContentRDD
   }
 
-  def computeTFIDFVector(sc: SparkContext, documents: RDD[String]): RDD[SparseVector] = {
+  def computeTFIDFVector(sc: SparkContext, documents: RDD[String], threshold: Int): RDD[SparseVector] = {
     val docs = documents.map(_.split(" ").toSeq)
     val hashingTF = new HashingTF()
     val tf: RDD[Vector] = hashingTF.transform(docs)
     tf.cache()
-    val idf = new IDF().fit(tf)
+    val idf = new IDF(threshold).fit(tf)
     idf.transform(tf).map(_.asInstanceOf[SparseVector])
   }
 
@@ -110,8 +110,9 @@ object PreprocessWithTFIDF {
     Utils.getAllFilePath(rootPath.getFileSystem(sc.hadoopConfiguration),
       rootPath, allFilesToProcess)
     val fileContentRDD = mapEachFileToSingleLine(sc, allFilesToProcess, args(2).toInt)
-    val tfidfRDD = computeTFIDFVector(sc, fileContentRDD)
-    val cleanedTFIDFRDD = filterTFIDFVectors(sc, tfidfRDD)
-    cleanedTFIDFRDD.saveAsTextFile(args(1))
+    val tfidfRDD = computeTFIDFVector(sc, fileContentRDD, allFilesToProcess.length / 2)
+    //val cleanedTFIDFRDD = filterTFIDFVectors(sc, tfidfRDD)
+    //cleanedTFIDFRDD.saveAsTextFile(args(1))
+    tfidfRDD.saveAsTextFile(args(1))
   }
 }
