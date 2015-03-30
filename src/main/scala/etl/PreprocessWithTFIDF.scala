@@ -7,9 +7,10 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.feature.HashingTF
 import org.apache.spark.mllib.feature.IDF
-import org.apache.spark.mllib.linalg.Vector
+import org.apache.spark.mllib.linalg.{SparseVector, Vector}
 import org.apache.spark.rdd.RDD
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object PreprocessWithTFIDF {
@@ -60,13 +61,41 @@ object PreprocessWithTFIDF {
     allFileContentRDD
   }
 
-  def computeTFIDFVector(sc: SparkContext, documents: RDD[String]): RDD[Vector] = {
+  def computeTFIDFVector(sc: SparkContext, documents: RDD[String]): RDD[SparseVector] = {
     val docs = documents.map(_.split(" ").toSeq)
     val hashingTF = new HashingTF()
     val tf: RDD[Vector] = hashingTF.transform(docs)
     tf.cache()
     val idf = new IDF().fit(tf)
-    idf.transform(tf)
+    idf.transform(tf).map(_.asInstanceOf[SparseVector])
+  }
+
+  private def filterTFIDFVectors(sc: SparkContext, tfidfSet: RDD[SparseVector]):
+      RDD[SparseVector] = {
+    import org.apache.spark.SparkContext._
+    // get the most important words
+    val sortedImportance = tfidfSet.mapPartitions(sparseVectors => {
+      val idfMap = new mutable.HashMap[Int, Double]
+      for (vector <- sparseVectors; i <- 0 until vector.indices.length) {
+        idfMap += (vector.indices(i) -> vector.values(i))
+      }
+      idfMap.toSeq.sortWith((x1, x2) => x1._2 > x2._2).take(
+        (idfMap.size * 0.005).toInt).iterator
+    }).sortBy(x => x._2, ascending = false)
+    val totalCount = sortedImportance.count()
+    val availableFieldsArray = sortedImportance.take((0.005 * totalCount).toInt).map(_._1)
+    tfidfSet.map(vector => {
+      val indices = new ListBuffer[Int]
+      val values = new ListBuffer[Double]
+      for (i <- 0 until availableFieldsArray.length) {
+        val idx = vector.indices(i)
+        if (availableFieldsArray.contains(idx)) {
+          indices += idx
+          values += vector.values(i)
+        }
+      }
+      new SparseVector(availableFieldsArray.length, indices.toArray, values.toArray)
+    }).filter(v => v.indices.length >= 1)
   }
 
   def main(args: Array[String]): Unit = {
@@ -82,6 +111,7 @@ object PreprocessWithTFIDF {
       rootPath, allFilesToProcess)
     val fileContentRDD = mapEachFileToSingleLine(sc, allFilesToProcess, args(2).toInt)
     val tfidfRDD = computeTFIDFVector(sc, fileContentRDD)
-    tfidfRDD.saveAsTextFile(args(1))
+    val cleanedTFIDFRDD = filterTFIDFVectors(sc, tfidfRDD)
+    cleanedTFIDFRDD.saveAsTextFile(args(1))
   }
 }
