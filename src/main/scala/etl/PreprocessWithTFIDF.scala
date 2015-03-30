@@ -61,29 +61,27 @@ object PreprocessWithTFIDF {
     allFileContentRDD
   }
 
-  private def filterMostFrequentWords(fileContent: RDD[String], threshold: Double): RDD[String] = {
+  private def filterMostFrequentWords(fileContent: RDD[String], threshold: Double):
+      (RDD[Seq[String]], Int) = {
     // do word count
     val wordRDD = fileContent.map(line => line.split(" ")).cache()
     val wordCountRDD = wordRDD.flatMap(wordArray => wordArray)
       .map(word => (word, 1))
       .reduceByKey(_ + _).sortBy(wordKeyFrequency => wordKeyFrequency._2, ascending = false)
-    val wordTotalNumber = wordCountRDD.count
+    val wordTotalNumber = wordCountRDD.count()
     val mostFrequentWordsSet = {
       val hSet = new mutable.HashSet[String]
       wordCountRDD.take((wordTotalNumber * threshold).toInt).foreach(word => hSet.add(word._1))
       hSet
     }
-    wordRDD.map(wordsArray => {
-      val frequentWords = wordsArray.filter(mostFrequentWordsSet.contains)
-      val filteredLine = frequentWords.foldLeft("")((existingLine, newWord) =>
-        if (existingLine == "") newWord else existingLine + " " + newWord)
-      filteredLine
-    }).filter(_.length >= 1)
+    (wordRDD.map(wordsArray => {
+      wordsArray.filter(mostFrequentWordsSet.contains).toSeq
+    }).filter(_.length >= 1), mostFrequentWordsSet.size)
   }
 
-  def computeTFIDFVector(sc: SparkContext, documents: RDD[String]): RDD[SparseVector] = {
-    val docs = documents.map(_.split(" ").toSeq)
-    val hashingTF = new HashingTF()
+  def computeTFIDFVector(sc: SparkContext, docs: RDD[Seq[String]], numFeatures: Int):
+      RDD[SparseVector] = {
+    val hashingTF = new HashingTF(numFeatures)
     val tf: RDD[Vector] = hashingTF.transform(docs)
     tf.cache()
     val idf = new IDF().fit(tf)
@@ -129,8 +127,8 @@ object PreprocessWithTFIDF {
     Utils.getAllFilePath(rootPath.getFileSystem(sc.hadoopConfiguration),
       rootPath, allFilesToProcess)
     val fileContentRDD = mapEachFileToSingleLine(sc, allFilesToProcess, args(2).toInt)
-    val filteredFileContentRDD = filterMostFrequentWords(fileContentRDD, 0.005)
-    val tfidfRDD = computeTFIDFVector(sc, filteredFileContentRDD)
+    val (filteredFileContentRDD, numFeatures) = filterMostFrequentWords(fileContentRDD, 0.005)
+    val tfidfRDD = computeTFIDFVector(sc, filteredFileContentRDD, numFeatures)
     tfidfRDD.saveAsTextFile(args(1))
   }
 }
