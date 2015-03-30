@@ -87,7 +87,7 @@ object PreprocessWithTFIDF {
     tfidfSet.map(vector => {
       val indices = new ListBuffer[Int]
       val values = new ListBuffer[Double]
-      for (i <- 0 until availableFieldsArray.length) {
+      for (i <- 0 until vector.indices.length) {
         val idx = vector.indices(i)
         if (availableFieldsArray.contains(idx)) {
           indices += idx
