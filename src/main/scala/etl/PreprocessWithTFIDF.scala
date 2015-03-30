@@ -41,7 +41,9 @@ object PreprocessWithTFIDF {
       val hadoopConf = new Configuration()
       val sourcePath = new Path(sourcePathString)
       val sourceFs = sourcePath.getFileSystem(hadoopConf)
-      val br = new BufferedReader(new InputStreamReader(sourceFs.open(sourcePath)))
+      val fileHandler = sourceFs.open(sourcePath)
+      val isr = new InputStreamReader(fileHandler)
+      val br = new BufferedReader(isr)
       var retStr = ""
       var line = ""
       while (line != null) {
@@ -50,6 +52,9 @@ object PreprocessWithTFIDF {
           retStr += (line + " ")
         }
       }
+      fileHandler.close()
+      isr.close()
+      br.close()
       retStr
     })
     allFileContentRDD
