@@ -129,8 +129,8 @@ object PreprocessWithTFIDF {
     Utils.getAllFilePath(rootPath.getFileSystem(sc.hadoopConfiguration),
       rootPath, allFilesToProcess)
     val fileContentRDD = mapEachFileToSingleLine(sc, allFilesToProcess, args(2).toInt)
-    filterMostFrequentWords(fileContentRDD, 0.005)
-    val tfidfRDD = computeTFIDFVector(sc, fileContentRDD)
+    val filteredFileContentRDD = filterMostFrequentWords(fileContentRDD, 0.005)
+    val tfidfRDD = computeTFIDFVector(sc, filteredFileContentRDD)
     tfidfRDD.saveAsTextFile(args(1))
   }
 }
