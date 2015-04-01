@@ -129,6 +129,6 @@ object PreprocessWithTFIDF {
     val fileContentRDD = mapEachFileToSingleLine(sc, allFilesToProcess, args(2).toInt)
     val (filteredFileContentRDD, numFeatures) = filterMostFrequentWords(fileContentRDD, 0.005)
     val tfidfRDD = computeTFIDFVector(sc, filteredFileContentRDD, numFeatures)
-    tfidfRDD.saveAsTextFile(args(1))
+    tfidfRDD.zipWithIndex().saveAsTextFile(args(1))
   }
 }
