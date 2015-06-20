@@ -274,7 +274,10 @@ object ProcessWithLSH {
     val vectorRDD = vectorTupleWithID.map{case (vectorTuple, id) =>
       new SparseVector(id.toInt, vectorTuple._1, vectorTuple._2, vectorTuple._3)}
     //calculate with LSH
-    val vectorWithLSHResult = vectorRDD.map(vector  => (vector.toString, lsh.calculateIndex(vector)))
+    val vectorWithLSHResult = vectorRDD.map(vector  =>
+      (vector.toString, {
+        lsh.calculateIndex(vector).mkString(",")
+      }))
     vectorWithLSHResult.saveAsTextFile("emailVectorWithLSH")
   }
 }
