@@ -278,7 +278,7 @@ object ProcessWithLSH {
       (vector.toString, {
         lsh.calculateIndex(vector).mkString(",")
       }))
-    vectorWithLSHResult.saveAsTextFile("emailVectorWithLSH")
+    vectorWithLSHResult.repartition(96).saveAsTextFile("emailVectorWithLSH")
     //output statistical info
     val statistical = vectorRDD.
       map(vector => (vector.vectorId, lsh.calculateIndex(vector))).flatMap{
@@ -288,6 +288,6 @@ object ProcessWithLSH {
       (tableId,
         lshBuckets.map(_._2).groupBy(_._1).map(
           tableDistribution => (tableDistribution._1, tableDistribution._2.size)).toList.sortBy(_._1))}
-    statistical.saveAsTextFile("statistical")
+    statistical.repartition(96).saveAsTextFile("statistical")
   }
 }
