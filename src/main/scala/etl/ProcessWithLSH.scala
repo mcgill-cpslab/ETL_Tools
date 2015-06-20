@@ -270,14 +270,23 @@ object ProcessWithLSH {
     val sc = new SparkContext()
     val rawVectorStrRdd = sc.textFile(filePath)
     val vectorTupleWithoutID = rawVectorStrRdd.map(Vectors.fromStringWithoutVectorID)
-    val vectorTupleWithID = vectorTupleWithoutID.zipWithUniqueId().cache()
+    val vectorTupleWithID = vectorTupleWithoutID.zipWithUniqueId()
     val vectorRDD = vectorTupleWithID.map{case (vectorTuple, id) =>
-      new SparseVector(id.toInt, vectorTuple._1, vectorTuple._2, vectorTuple._3)}
+      new SparseVector(id.toInt, vectorTuple._1, vectorTuple._2, vectorTuple._3)}.cache()
     //calculate with LSH
     val vectorWithLSHResult = vectorRDD.map(vector  =>
       (vector.toString, {
         lsh.calculateIndex(vector).mkString(",")
       }))
     vectorWithLSHResult.saveAsTextFile("emailVectorWithLSH")
+    //output statistical info
+    val statistical = vectorRDD.
+      map(vector => (vector.vectorId, lsh.calculateIndex(vector))).flatMap{
+      case (vectorId, lshBucketIds) =>
+        lshBucketIds.indices.map(index => (index, (lshBucketIds(index), vectorId)))
+    }.groupBy(_._1).map{case (tableId, lshBuckets) => (tableId,
+      lshBuckets.map(_._2).groupBy(_._1).map(tableDistribution => (tableDistribution._1,
+        tableDistribution._2.size)))}
+    statistical.saveAsTextFile("statistical")
   }
 }
