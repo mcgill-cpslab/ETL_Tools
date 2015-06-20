@@ -143,6 +143,18 @@ object Vectors {
     (id, size, indices, values)
   }
 
+  private[etl] def fromStringWithoutVectorID(inputString: String):
+  (Int, Array[Int], Array[Double]) = {
+    val stringArray = inputString.split(",\\[")
+    if (stringArray.length != 3) {
+      throw new Exception(s"cannot parse $inputString")
+    }
+    val size = stringArray(0).replace("(", "").toInt
+    val indices = stringArray(1).replace("]", "").split(",").map(_.toInt)
+    val values = stringArray(2).replace("])", "").split(",").map(_.toDouble)
+    (size, indices, values)
+  }
+
   private[etl] def fromString(inputString: String): (Int, Int, Array[Int], Array[Double]) = {
     val stringArray = inputString.split(",\\[")
     if (stringArray.length != 3) {

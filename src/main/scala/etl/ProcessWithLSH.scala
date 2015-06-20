@@ -1,5 +1,6 @@
 package etl
 
+import java.io.File
 import java.util
 
 import scala.collection.mutable
@@ -7,8 +8,9 @@ import scala.collection.mutable.ListBuffer
 import scala.io.Source
 import scala.util.Random
 
-import com.typesafe.config.Config
+import com.typesafe.config.{ConfigFactory, Config}
 import etl.vector.{Vectors, SparseVector}
+import org.apache.spark.SparkContext
 
 private object SimilarityCalculator {
 
@@ -253,4 +255,26 @@ private class LSH(conf: Config) extends Serializable {
 }
 
 object ProcessWithLSH {
+  def main(args: Array[String]): Unit = {
+    if (args.length != 1) {
+      println("Usage: program conf_path")
+      sys.exit(1)
+    }
+    //configuration
+    val conf = ConfigFactory.parseFile(new File(args(0)))
+    val filePath = conf.getString("inputFilePath")
+
+    //build lsh
+    val lsh = new LSH(conf)
+
+    val sc = new SparkContext()
+    val rawVectorStrRdd = sc.textFile(filePath)
+    val vectorTupleWithoutID = rawVectorStrRdd.map(Vectors.fromStringWithoutVectorID)
+    val vectorTupleWithID = vectorTupleWithoutID.zipWithUniqueId().cache()
+    val vectorRDD = vectorTupleWithID.map{case (vectorTuple, id) =>
+      new SparseVector(id.toInt, vectorTuple._1, vectorTuple._2, vectorTuple._3)}
+    //calculate with LSH
+    val vectorWithLSHResult = vectorRDD.map(vector  => (vector.toString, lsh.calculateIndex(vector)))
+    vectorWithLSHResult.saveAsTextFile("emailVectorWithLSH")
+  }
 }
