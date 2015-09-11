@@ -6,9 +6,9 @@ import sbtassembly.Plugin.{MergeStrategy, PathList}
 
 assemblySettings
 
-name := "ETL_Eron_Email"
+name := "ETL_Tools"
 
-version := "0.1"
+version := "0.2"
 
 scalaVersion := "2.10.5"
 
