@@ -1,12 +1,9 @@
 package etl.eronemail
 
-import java.io.{BufferedReader, InputStreamReader}
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import etl.Utils
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.feature.{HashingTF, IDF}
@@ -26,39 +23,6 @@ object PreprocessWithTFIDF {
       return false
     }
     true
-  }
-
-  /**
-   * map each file specified in the allFilesPath to a single line (a string)
-   * @param allFilesPath list of file path
-   * @return RDD of the file content (each string per file)
-   */
-  def mapEachFileToSingleLine(sc: SparkContext,
-                              allFilesPath: ListBuffer[String],
-                              outputPartitionNum: Int): RDD[String] = {
-    var allFileContentRDD: RDD[String] = null
-    val allFilesPathRDD = sc.parallelize(allFilesPath, outputPartitionNum)
-    allFileContentRDD = allFilesPathRDD.map(sourcePathString =>  {
-      val hadoopConf = new Configuration()
-      val sourcePath = new Path(sourcePathString)
-      val sourceFs = sourcePath.getFileSystem(hadoopConf)
-      val fileHandler = sourceFs.open(sourcePath)
-      val isr = new InputStreamReader(fileHandler)
-      val br = new BufferedReader(isr)
-      var retStr = ""
-      var line = ""
-      while (line != null) {
-        line = br.readLine()
-        if (filterNonSenseLines(line)) {
-          retStr += (line + " ")
-        }
-      }
-      fileHandler.close()
-      isr.close()
-      br.close()
-      retStr
-    })
-    allFileContentRDD
   }
 
   private def filterMostFrequentWords(fileContent: RDD[String], threshold: Double):
@@ -126,7 +90,8 @@ object PreprocessWithTFIDF {
     val allFilesToProcess = new ListBuffer[String]
     Utils.getAllFilePath(rootPath.getFileSystem(sc.hadoopConfiguration),
       rootPath, allFilesToProcess)
-    val fileContentRDD = mapEachFileToSingleLine(sc, allFilesToProcess, args(2).toInt)
+    val fileContentRDD = Utils.mapEachFileToSingleLine(sc,
+      allFilesToProcess, args(2).toInt, filterNonSenseLines)
     val (filteredFileContentRDD, numFeatures) = filterMostFrequentWords(fileContentRDD, 0.005)
     val tfidfRDD = computeTFIDFVector(sc, filteredFileContentRDD, numFeatures)
     tfidfRDD.zipWithIndex().saveAsTextFile(args(1))
