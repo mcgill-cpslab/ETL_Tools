@@ -1,7 +1,6 @@
-package etl
+package etl.eronemail
 
 import java.io.File
-import java.nio.ByteBuffer
 import java.util
 
 import scala.collection.mutable
@@ -10,8 +9,8 @@ import scala.io.Source
 import scala.util.Random
 
 import breeze.stats.distributions.Gaussian
-import com.typesafe.config.{ConfigFactory, Config}
-import etl.vector.{Vectors, SparseVector}
+import com.typesafe.config.{Config, ConfigFactory}
+import etl.vector.{SparseVector, Vectors}
 import org.apache.spark.SparkContext
 
 private object SimilarityCalculator {

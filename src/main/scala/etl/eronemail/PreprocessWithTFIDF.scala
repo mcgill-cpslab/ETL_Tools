@@ -1,17 +1,17 @@
-package etl
+package etl.eronemail
 
-import java.io.{InputStreamReader, BufferedReader}
-
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.spark.SparkContext
-import org.apache.spark.mllib.feature.HashingTF
-import org.apache.spark.mllib.feature.IDF
-import org.apache.spark.mllib.linalg.{SparseVector, Vector}
-import org.apache.spark.rdd.RDD
+import java.io.{BufferedReader, InputStreamReader}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+
+import etl.Utils
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
+import org.apache.spark.SparkContext
+import org.apache.spark.mllib.feature.{HashingTF, IDF}
+import org.apache.spark.mllib.linalg.{SparseVector, Vector}
+import org.apache.spark.rdd.RDD
 
 object PreprocessWithTFIDF {
 
