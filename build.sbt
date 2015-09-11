@@ -21,7 +21,7 @@ fork := true
 resolvers += "sonatype-releases" at "https://oss.sonatype.org/content/repositories/releases/"
 
 libraryDependencies ++= Seq(
-  "org.apache.spark" % "spark-mllib_2.10" % "1.3.0"
+  "org.apache.spark" % "spark-mllib_2.10" % "1.4.1"
 )
 
 
