@@ -22,7 +22,7 @@ object ConvertToLabeledData {
       val indexArray = labeledPointArray.map(_._1.toInt)
       val valueArray = labeledPointArray.map(_._2.toDouble)
       val label = if (completeArray(0).toDouble < 0) 0 else 1
-      LabeledPoint(label, new SparseVector(vectorSize, indexArray, valueArray))
+      LabeledPoint(label, new SparseVector(vectorSize + 1, indexArray, valueArray))
     } catch {
       case e: Exception =>
         e.printStackTrace()
