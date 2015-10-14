@@ -49,7 +49,12 @@ object PreprocessWithTFIDF {
     val tf: RDD[Vector] = hashingTF.transform(docs)
     tf.cache()
     val idf = new IDF().fit(tf)
-    idf.transform(tf).map(_.asInstanceOf[SparseVector])
+    idf.transform(tf).map(_.asInstanceOf[SparseVector]).map(vector => {
+      val values = vector.values
+      val squareSum = math.sqrt(values.foldLeft(0.0){case (sum, weight) => sum + weight * weight})
+      val normalizedValues = values.map(x => x / squareSum)
+      new SparseVector(vector.size, vector.indices, normalizedValues)
+    })
   }
 
   private def filterTFIDFVectors(sc: SparkContext, tfidfSet: RDD[SparseVector]):
