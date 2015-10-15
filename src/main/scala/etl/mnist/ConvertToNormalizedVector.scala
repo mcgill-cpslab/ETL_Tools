@@ -52,9 +52,10 @@ object ConvertToNormalizedVector {
     var cnt = 0
 
     vectorArrays.foreach(vectorArray => {
-      val vector = new SparseVector(cnt, size, interestedDims, vectorArray)
+      val filteresVectorDim = vectorArray.zipWithIndex.filter(_._1 != 0).map(_._2)
+      val vector = new SparseVector(cnt, size, filteresVectorDim, vectorArray.filter(_ != 0))
       cnt += 1
-      Files.write(Paths.get(outputPath), vector.toString.getBytes(StandardCharsets.UTF_8),
+      Files.write(Paths.get(outputPath), (vector.toString + "\n").getBytes(StandardCharsets.UTF_8),
         StandardOpenOption.APPEND)
     })
   }
