@@ -67,7 +67,8 @@ object ConvertToNormalizedVector {
       sys.exit(1)
     }
     val inputPath = args(0)
-    val vectorArray = loadAsArray(inputPath, 60000, args(2).toBoolean)
+    val testing = args(2).toBoolean
+    val vectorArray = loadAsArray(inputPath, if (!testing) 60000 else 10000, testing)
     val mostInterestingDims = lookupDimWithMostVariations(vectorArray, 50)
     val mostInterestingDimsSet = new mutable.HashSet[Int]()
     mostInterestingDims.foreach(dim => mostInterestingDimsSet += dim)
