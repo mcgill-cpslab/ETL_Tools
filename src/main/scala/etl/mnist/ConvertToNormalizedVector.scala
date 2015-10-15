@@ -38,7 +38,7 @@ object ConvertToNormalizedVector {
     }
     //3. get variation
     val variation = squaredDifference.map(diff => diff / vectorArray.length)
-    variation.zipWithIndex.sortWith((a, b) => a._1 > b._1).map(_._2)
+    variation.zipWithIndex.sortWith((a, b) => a._1 > b._1).map(_._2).take(keptDim)
   }
 
   def filterVectorWithSpecifiedDim(
