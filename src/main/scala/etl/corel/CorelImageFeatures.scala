@@ -21,8 +21,8 @@ object CorelImageFeatures {
       val vectorId = weightsArray(0).toInt
       val values = weightsArray.tail.map(_.toDouble)
       val interestedIndices = values.zipWithIndex.filter(_._1 != 0.0).map(_._2)
-      val nonZeroValues = values.zipWithIndex.filter(x => interestedIndices.contains(x._2)).map(_._1)
-      vectorArray += new SparseVector(vectorId, vectorDim, interestedIndices, values)
+      val nonZeroValues = values.filter(_ != 0)
+      vectorArray += new SparseVector(vectorId, vectorDim, interestedIndices, nonZeroValues)
     }
     vectorArray.toArray
   }
