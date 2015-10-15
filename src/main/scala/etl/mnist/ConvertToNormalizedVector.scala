@@ -13,12 +13,13 @@ object ConvertToNormalizedVector {
 
   val vectorDim = 784
 
-  def loadAsArray(inputPath: String, lineCount: Int): Array[Array[Double]] = {
+  def loadAsArray(inputPath: String, lineCount: Int, isLoadingTest: Boolean = false):
+  Array[Array[Double]] = {
     val ret = Array.fill[Array[Double]](lineCount)(null)
     var cnt = 0
     for (line <- Source.fromFile(inputPath).getLines()) {
       val newArray = line.split(",").map(_.toDouble)
-      ret(cnt) = newArray
+      ret(cnt) = if (!isLoadingTest) newArray else newArray.tail
       cnt += 1
     }
     ret
@@ -61,12 +62,12 @@ object ConvertToNormalizedVector {
   }
 
   def main(args: Array[String]): Unit = {
-    if (args.length != 2) {
-      println("Usage: program input_path  output_path")
+    if (args.length != 3) {
+      println("Usage: program input_path output_path testing")
       sys.exit(1)
     }
     val inputPath = args(0)
-    val vectorArray = loadAsArray(inputPath, 60000)
+    val vectorArray = loadAsArray(inputPath, 60000, args(2).toBoolean)
     val mostInterestingDims = lookupDimWithMostVariations(vectorArray, 50)
     val mostInterestingDimsSet = new mutable.HashSet[Int]()
     mostInterestingDims.foreach(dim => mostInterestingDimsSet += dim)
