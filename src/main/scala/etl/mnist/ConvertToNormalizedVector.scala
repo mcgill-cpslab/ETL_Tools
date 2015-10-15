@@ -13,16 +13,22 @@ object ConvertToNormalizedVector {
 
   val vectorDim = 784
 
-  def loadAsArray(inputPath: String, lineCount: Int, isLoadingTest: Boolean = false):
-  Array[Array[Double]] = {
-    val ret = Array.fill[Array[Double]](lineCount)(null)
+  def loadAsArray(trainingPath: String, testPath: String, trainingSize: Int, testSize: Int):
+  (Array[Array[Double]], Array[Array[Double]]) = {
+    val training = Array.fill[Array[Double]](trainingSize)(null)
+    val testing = Array.fill[Array[Double]](testSize)(null)
     var cnt = 0
-    for (line <- Source.fromFile(inputPath).getLines()) {
+    for (line <- Source.fromFile(trainingPath).getLines()) {
       val newArray = line.split(",").map(_.toDouble)
-      ret(cnt) = if (!isLoadingTest) newArray else newArray.tail
+      training(cnt) = newArray
       cnt += 1
     }
-    ret
+    for (line <- Source.fromFile(trainingPath).getLines()) {
+      val newArray = line.split(",").map(_.toDouble)
+      testing(cnt) = newArray.tail
+      cnt += 1
+    }
+    (training, testing)
   }
 
   def lookupDimWithMostVariations(vectorArray: Array[Array[Double]], keptDim: Int): Array[Int] = {
@@ -43,36 +49,51 @@ object ConvertToNormalizedVector {
   }
 
   def filterVectorWithSpecifiedDim(
-      vectorArray: Array[Array[Double]],
-      interestedDim: mutable.HashSet[Int]): Array[Array[Double]] = {
-    vectorArray.map(vector => vector.zipWithIndex.filter(a => interestedDim.contains(a._2)).map(_._1))
+      trainingArray: Array[Array[Double]],
+      testArray: Array[Array[Double]],
+      interestedDim: mutable.HashSet[Int]): (Array[Array[Double]], Array[Array[Double]])  = {
+    (trainingArray.map(vector => vector.zipWithIndex.filter(a => interestedDim.contains(a._2)).map(_._1)),
+      testArray.map(vector => vector.zipWithIndex.filter(a => interestedDim.contains(a._2)).map(_._1)))
   }
 
-  def outputFilter(interestedDims: Array[Int], vectorArrays: Array[Array[Double]], outputPath: String): Unit = {
+  def outputFilter(
+      interestedDims: Array[Int], 
+      trainingArray: Array[Array[Double]],
+      testArray: Array[Array[Double]],
+      outputPath: String): Unit = {
     val size = vectorDim
     var cnt = 0
 
-    vectorArrays.foreach(vectorArray => {
+    trainingArray.foreach(vectorArray => {
       val filteresVectorDim = vectorArray.zipWithIndex.filter(_._1 != 0).map(_._2)
       val vector = new SparseVector(cnt, size, filteresVectorDim, vectorArray.filter(_ != 0))
       cnt += 1
-      Files.write(Paths.get(outputPath), (vector.toString + "\n").getBytes(StandardCharsets.UTF_8),
+      Files.write(Paths.get(outputPath + "_training"), (vector.toString + "\n").getBytes(StandardCharsets.UTF_8),
+        StandardOpenOption.APPEND)
+    })
+
+    testArray.foreach(vectorArray => {
+      val filteresVectorDim = vectorArray.zipWithIndex.filter(_._1 != 0).map(_._2)
+      val vector = new SparseVector(cnt, size, filteresVectorDim, vectorArray.filter(_ != 0))
+      cnt += 1
+      Files.write(Paths.get(outputPath + "_test"), (vector.toString + "\n").getBytes(StandardCharsets.UTF_8),
         StandardOpenOption.APPEND)
     })
   }
 
   def main(args: Array[String]): Unit = {
     if (args.length != 3) {
-      println("Usage: program input_path output_path testing")
+      println("Usage: program training_path test_path output_path")
       sys.exit(1)
     }
-    val inputPath = args(0)
-    val testing = args(2).toBoolean
-    val vectorArray = loadAsArray(inputPath, if (!testing) 60000 else 10000, testing)
-    val mostInterestingDims = lookupDimWithMostVariations(vectorArray, 50)
+    val trainingPath = args(0)
+    val testPath = args(1)
+    val (trainingVectors, testVectors) = loadAsArray(trainingPath, testPath, 60000, 10000)
+    val mostInterestingDims = lookupDimWithMostVariations(trainingVectors, 50)
     val mostInterestingDimsSet = new mutable.HashSet[Int]()
     mostInterestingDims.foreach(dim => mostInterestingDimsSet += dim)
-    val vectorWithOnlyInterestedDims = filterVectorWithSpecifiedDim(vectorArray, mostInterestingDimsSet)
-    outputFilter(mostInterestingDims, vectorWithOnlyInterestedDims, args(1))
+    val (filteredTraining, filtertedTest) = filterVectorWithSpecifiedDim(
+      trainingVectors, testVectors, mostInterestingDimsSet)
+    outputFilter(mostInterestingDims, filteredTraining, filtertedTest, args(1))
   }
 }
