@@ -23,7 +23,7 @@ object ConvertToNormalizedVector {
       training(cnt) = newArray
       cnt += 1
     }
-    for (line <- Source.fromFile(trainingPath).getLines()) {
+    for (line <- Source.fromFile(testPath).getLines()) {
       val newArray = line.split(",").map(_.toDouble)
       testing(cnt) = newArray.tail
       cnt += 1
