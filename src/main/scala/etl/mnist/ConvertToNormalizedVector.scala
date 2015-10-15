@@ -95,6 +95,6 @@ object ConvertToNormalizedVector {
     mostInterestingDims.foreach(dim => mostInterestingDimsSet += dim)
     val (filteredTraining, filtertedTest) = filterVectorWithSpecifiedDim(
       trainingVectors, testVectors, mostInterestingDimsSet)
-    outputFilter(mostInterestingDims, filteredTraining, filtertedTest, args(1))
+    outputFilter(mostInterestingDims, filteredTraining, filtertedTest, args(2))
   }
 }
