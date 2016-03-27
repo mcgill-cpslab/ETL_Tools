@@ -18,11 +18,9 @@ scalacOptions ++= Seq("-unchecked", "-Xlint", "-deprecation", "-Yno-adapted-args
 
 fork := true
 
-resolvers += "sonatype-releases" at "https://oss.sonatype.org/content/repositories/releases/"
+resolvers += Resolver.mavenLocal
 
-libraryDependencies ++= Seq(
-  "org.apache.spark" % "spark-mllib_2.10" % "1.6.0"
-)
+libraryDependencies += "codingcat.me" % "stateful-spark-mllib_2.10" % "1.6.0"
 
 
 mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) => {
