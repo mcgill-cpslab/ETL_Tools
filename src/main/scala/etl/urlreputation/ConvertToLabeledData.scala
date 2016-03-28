@@ -36,7 +36,7 @@ object ConvertToLabeledData {
       if (featureSelection) {
         val featureSelectThreshold = conf.getInt("etl.url.featureNumber")
         val selector = new ChiSqSelector(featureSelectThreshold)
-        val transformer = selector.fit(svmData)
+        val transformer = selector.fit(svmData.repartition(1000))
         svmData.map{lp => LabeledPoint(
           if (lp.label > 0) lp.label else 0,
           transformer.transform(lp.features))}
