@@ -1,79 +1,51 @@
 package etl.urlreputation
 
-import java.io.{BufferedReader, InputStreamReader}
+import java.io.{File, BufferedReader, InputStreamReader}
 
 import scala.collection.mutable.ListBuffer
 
+import com.typesafe.config.ConfigFactory
 import etl.Utils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkContext
+import org.apache.spark.mllib.feature.ChiSqSelector
 import org.apache.spark.mllib.linalg.SparseVector
 import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.rdd.RDD
 
 object ConvertToLabeledData {
 
-  private def fromLineToLabeledPoint(vectorSize: Int, line: String): LabeledPoint = {
-    try {
-      val completeArray = line.split(" ")
-      val featureArray = completeArray.tail
-      val labeledPointArray = featureArray.map(_.split(":")).map(array => (array(0), array(1)))
-      val indexArray = labeledPointArray.map(_._1.toInt)
-      val valueArray = labeledPointArray.map(_._2.toDouble)
-      val label = if (completeArray(0).toDouble < 0) 0 else 1
-      LabeledPoint(label, new SparseVector(vectorSize + 1, indexArray, valueArray))
-    } catch {
-      case e: Exception =>
-        e.printStackTrace()
-        println(line)
-        null
-    }
-  }
-
-  private def loadDataAndConvertToLabeledData(
-     sc: SparkContext,
-     allFilesPath: ListBuffer[String],
-     outputPartitionNum: Int,
-     vectorSize: Int): RDD[LabeledPoint] = {
-    val allFilesPathRDD = sc.parallelize(allFilesPath, outputPartitionNum)
-    val labeledPointsRDD = allFilesPathRDD.flatMap(sourcePathString =>  {
-      val hadoopConf = new Configuration()
-      val sourcePath = new Path(sourcePathString)
-      val sourceFs = sourcePath.getFileSystem(hadoopConf)
-      val fileHandler = sourceFs.open(sourcePath)
-      val isr = new InputStreamReader(fileHandler)
-      val br = new BufferedReader(isr)
-      var line = br.readLine()
-      val pointsArray = new ListBuffer[LabeledPoint]
-      while (line != null && line.length > 1) {
-        pointsArray += fromLineToLabeledPoint(vectorSize, line)
-        line = br.readLine()
-      }
-      fileHandler.close()
-      isr.close()
-      br.close()
-      pointsArray
-    })
-    labeledPointsRDD
-  }
-
   def main(args: Array[String]): Unit = {
-    if (args.length < 3) {
-      println("Usage: program rootPath outPath partitionNum")
+    if (args.length != 1) {
+      // println("Usage: program rootPath outPath partitionNum")
+      println("Usage: program configPath")
       sys.exit(-1)
     }
     val sc = new SparkContext()
-    val rootPath = new Path(args(0))
-    val allFilesToProcess = new ListBuffer[String]
-    Utils.getAllFilePath(rootPath.getFileSystem(sc.hadoopConfiguration),
-      rootPath, allFilesToProcess)
-    val labeledPoints = loadDataAndConvertToLabeledData(
-      sc,
-      vectorSize = 3231961,
-      allFilesPath = allFilesToProcess,
-      outputPartitionNum = args(2).toInt)
-    println(s"get ${labeledPoints.count()} instances in total")
-    labeledPoints.saveAsTextFile(args(1))
+    val conf = ConfigFactory.parseFile(new File(args(0)))
+    val partitions = conf.getInt("etl.url.partitions")
+    val inputDir = conf.getString("etl.url.inputPath")
+    val outputDir = conf.getString("etl.url.outputPath")
+    val featureSelection = conf.getBoolean("etl.url.featureSelection")
+    val rootPath = new Path(inputDir)
+    val svmData = MLUtils.loadLibSVMFile(sc, inputDir)
+
+    val outputData = {
+      if (featureSelection) {
+        val featureSelectThreshold = conf.getInt("etl.url.featureNumber")
+        val selector = new ChiSqSelector(featureSelectThreshold)
+        val transformer = selector.fit(svmData)
+        svmData.map{lp => LabeledPoint(
+          if (lp.label > 0) lp.label else 0,
+          transformer.transform(lp.features))}
+      } else {
+        svmData.map{lp => LabeledPoint(if (lp.label > 0) lp.label else 0, lp.features)}
+      }
+    }.repartition(partitions)
+
+    println(s"get ${outputData.count()} instances in total")
+    outputData.saveAsTextFile(outputDir)
   }
 }
