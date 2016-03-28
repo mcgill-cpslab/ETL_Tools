@@ -24,7 +24,9 @@ object ConvertToLabeledPoint {
             featureStr.toDouble
           }
         )
-        val sparseFeature = new DenseVector(feature)
+        val nonZeroIndices = feature.indices.filter(i => feature(i) != 0).toArray
+        val nonZeroValues = feature.filter(_ != 0)
+        val sparseFeature = new SparseVector(11, nonZeroIndices, nonZeroValues)
         new LabeledPoint(label, sparseFeature)
     }.repartition(args(2).toInt)
     labeledPoints.saveAsTextFile(args(1))
