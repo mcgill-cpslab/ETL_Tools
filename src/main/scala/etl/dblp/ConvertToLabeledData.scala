@@ -10,14 +10,7 @@ import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 
 object ConvertToLabeledData {
-
-  private def fromXmlToLabeledPoint(path: String): Unit = {
-    val xmlElem = XML.loadFile(path)
-    val allArticles = xmlElem \ "dblp" \ "article"
-
-    println(allArticles.length)
-  }
-
+  
   def main(args: Array[String]): Unit = {
     val titles = new ListBuffer[String]
     val years = new ListBuffer[Int]
@@ -27,8 +20,6 @@ object ConvertToLabeledData {
     val titlePattern = """<title>(.*)</title>""".r
     val yearPattern = """<year>(.*)</year>""".r
     var isArticleFlag = false
-    fromXmlToLabeledPoint(args(0))
-    /*
     for (line <- Source.fromFile(args(0)).getLines()) {
       line match {
         case articlePattern(x) =>
@@ -62,6 +53,6 @@ object ConvertToLabeledData {
     val tf = hashingTF.transform(words).repartition(args(2).toInt)
     val labels = sc.parallelize(years).map(year => if (year > 2007) 0 else 1).repartition(
       args(2).toInt)
-    labels.zip(tf).map{case (l, f) => LabeledPoint(l, f)}.saveAsTextFile(args(1))*/
+    labels.zip(tf).map{case (l, f) => LabeledPoint(l, f)}.saveAsTextFile(args(1))
   }
 }
