@@ -16,15 +16,15 @@ object ConvertToLabeledData {
     val list = new ListBuffer[Article]
     var title: String = null
     var year: Int = 0
+    val titlePattern = """<title>(.*)</title>""".r
+    val yearPattern = """<year>(.*)</year>""".r
     for (line <- Source.fromFile(args(0)).getLines()) {
-      val trimmedLine = line.trim
-      if (line.startsWith("<title>")) {
-        title = trimmedLine.substring(7, trimmedLine.length - 8)
-      } else {
-        if (line.startsWith("<year>")) {
-          year = trimmedLine.substring(6, trimmedLine.length - 7).toInt
+      line match {
+        case titlePattern(newTitle) =>
+          title = newTitle
+        case yearPattern(newYear) =>
+          year = newYear.toInt
           list += Article(year, title)
-        }
       }
     }
     //generate rdd
