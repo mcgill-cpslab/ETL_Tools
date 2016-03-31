@@ -33,8 +33,7 @@ object ConvertToLabeledData {
     val sc = new SparkContext
     val articleRDD = sc.parallelize(list).repartition(args(2).toInt).cache()
     // generate bag of words
-    val words = articleRDD.map(article => article.title.filter(c => (c >= 'a' && c <= 'z') ||
-      (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == ' ').split(" ").toSeq.map(_.toLowerCase))
+    val words = articleRDD.map(article => article.title.split(" ").toSeq.map(_.toLowerCase))
     val hashingTF = new HashingTF()
     val tf = hashingTF.transform(words)
     println(tf.first().toSparse.size + "=====")
