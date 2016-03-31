@@ -8,9 +8,9 @@ import org.apache.spark.mllib.feature.HashingTF
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 
-object ConvertToLabeledData {
+case class Article(year: Int, title: String)
 
-  case class Article(year: Int, title: String)
+object ConvertToLabeledData {
 
   def main(args: Array[String]): Unit = {
     val list = new ListBuffer[Article]
@@ -33,6 +33,7 @@ object ConvertToLabeledData {
     //generate rdd
     val sc = new SparkContext
     val articleRDD = sc.parallelize(list).repartition(args(2).toInt).cache()
+    println(articleRDD.count())
     // generate bag of words
     val words = articleRDD.map(article => article.title.split(" ").toSeq.map(_.toLowerCase))
     val hashingTF = new HashingTF(1000)
