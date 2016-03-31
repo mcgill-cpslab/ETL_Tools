@@ -8,12 +8,11 @@ import org.apache.spark.mllib.feature.HashingTF
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 
-case class Article(year: Int, title: String)
-
 object ConvertToLabeledData {
 
   def main(args: Array[String]): Unit = {
-    val list = new ListBuffer[Article]
+    val titles = new ListBuffer[String]
+    val years = new ListBuffer[Int]
     var title: String = null
     var year: Int = 0
     val titlePattern = """<title>(.*)</title>""".r
@@ -21,29 +20,28 @@ object ConvertToLabeledData {
     for (line <- Source.fromFile(args(0)).getLines()) {
       line match {
         case titlePattern(newTitle) =>
-          println(s"find title $newTitle")
           title = newTitle
         case yearPattern(newYear) =>
-          println(s"find title $title published at $newYear")
           year = newYear.toInt
-          list += Article(year, new String(title))
+          titles += new String(title)
+          years += year
         case _ =>
 
       }
     }
-    println(list.size + "===========")
     //generate rdd
     val sc = new SparkContext
-    val articleRDD = sc.parallelize(list).repartition(args(2).toInt).cache()
-    println(articleRDD.count())
+    val titlesRDD = sc.parallelize(titles).repartition(args(2).toInt).cache()
+    println(titlesRDD.count())
     // generate bag of words
-    val words = articleRDD.map(article => article.title.split(" ").toSeq.map(_.toLowerCase))
+    val words = titlesRDD.map(str =>
+      if (str.charAt(str.length - 1) == '.') {
+        str.substring(0, str.length - 1)
+      } else {
+        str
+      }).map(title => title.split(" ").toSeq.map(_.toLowerCase))
     val hashingTF = new HashingTF(1000)
     val tf = hashingTF.transform(words)
-    println(tf.first().toSparse.size + "=====")
-    val labeledData = articleRDD.map(article => if (article.year > 2007) 1 else 0).zip(tf).map{
-      case (label, feature) => LabeledPoint(label, feature)
-    }
-    labeledData.saveAsTextFile(args(1))
+    tf.count()
   }
 }
