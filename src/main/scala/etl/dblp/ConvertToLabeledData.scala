@@ -15,13 +15,13 @@ object ConvertToLabeledData {
     val years = new ListBuffer[Int]
     var title: String = null
     var year: Int = 0
-    val articlePattern = """<article>(.*)""".r
+    val articlePattern = """<article(.*)""".r
     val titlePattern = """<title>(.*)</title>""".r
     val yearPattern = """<year>(.*)</year>""".r
     var isArticleFlag = false
     for (line <- Source.fromFile(args(0)).getLines()) {
       line match {
-        case articlePattern(isArticle) =>
+        case articlePattern(x) =>
           isArticleFlag = true
         case titlePattern(newTitle) =>
           if (isArticleFlag) {
