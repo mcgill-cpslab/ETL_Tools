@@ -25,6 +25,8 @@ object ConvertToLabeledData {
         case yearPattern(newYear) =>
           year = newYear.toInt
           list += Article(year, title)
+        case _ =>
+          
       }
     }
     //generate rdd
