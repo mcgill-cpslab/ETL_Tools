@@ -10,7 +10,7 @@ import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 
 object ConvertToLabeledData {
-  
+
   def main(args: Array[String]): Unit = {
     val titles = new ListBuffer[String]
     val years = new ListBuffer[Int]
@@ -40,6 +40,7 @@ object ConvertToLabeledData {
       }
     }
     //generate rdd
+    require(titles.length == years.length)
     val sc = new SparkContext
     val titlesRDD = sc.parallelize(titles)
     // generate bag of words
