@@ -21,8 +21,10 @@ object ConvertToLabeledData {
     for (line <- Source.fromFile(args(0)).getLines()) {
       line match {
         case titlePattern(newTitle) =>
+          println(s"find title $newTitle")
           title = newTitle
         case yearPattern(newYear) =>
+          println(s"find title $title published at $newYear")
           year = newYear.toInt
           list += Article(year, new String(title))
         case _ =>
