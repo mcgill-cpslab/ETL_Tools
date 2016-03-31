@@ -50,7 +50,7 @@ object ConvertToLabeledData {
       } else {
         str
       }).map(title => title.toLowerCase.split(" ").toSeq).cache()
-    val hashingTF = new HashingTF(1000)
+    val hashingTF = new HashingTF(args(3).toInt)
     val tf = hashingTF.transform(words).repartition(args(2).toInt)
     val labels = sc.parallelize(years).map(year => if (year > 2007) 0 else 1).repartition(
       args(2).toInt)
