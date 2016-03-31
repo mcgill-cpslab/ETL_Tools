@@ -42,6 +42,7 @@ object ConvertToLabeledData {
       }).map(title => title.split(" ").toSeq.map(_.toLowerCase))
     val hashingTF = new HashingTF(1000)
     val tf = hashingTF.transform(words)
-    tf.count()
+    val labels = sc.parallelize(years).map(year => if (year > 2007) 0 else 1)
+    labels.zip(tf).map{case (l, f) => LabeledPoint(l, f)}.saveAsTextFile(args(1))
   }
 }
