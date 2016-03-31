@@ -31,14 +31,14 @@ object ConvertToLabeledData {
     }
     //generate rdd
     val sc = new SparkContext
-    val titlesRDD = sc.parallelize(titles, args(2).toInt).repartition(args(2).toInt)
+    val titlesRDD = sc.parallelize(titles).repartition(args(2).toInt)
     // generate bag of words
     val words = titlesRDD.map(str =>
       if (str.charAt(str.length - 1) == '.') {
         str.substring(0, str.length - 1)
       } else {
         str
-      }).map(title => title.split(" ").toSeq.map(_.toLowerCase)).cache()
+      }).map(title => title.toLowerCase.split(" ").toSeq).cache()
     val hashingTF = new HashingTF(1000)
     val tf = hashingTF.transform(words).repartition(args(2).toInt)
     val labels = sc.parallelize(years).map(year => if (year > 2007) 0 else 1)
