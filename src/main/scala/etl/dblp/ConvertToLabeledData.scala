@@ -32,7 +32,6 @@ object ConvertToLabeledData {
     //generate rdd
     val sc = new SparkContext
     val titlesRDD = sc.parallelize(titles).repartition(args(2).toInt).cache()
-    println(titlesRDD.count())
     // generate bag of words
     val words = titlesRDD.map(str =>
       if (str.charAt(str.length - 1) == '.') {
