@@ -26,12 +26,12 @@ object ConvertToLabeledData {
           year = newYear.toInt
           list += Article(year, title)
         case _ =>
-          
+
       }
     }
     //generate rdd
     val sc = new SparkContext
-    val articleRDD = sc.parallelize(list).repartition(20).cache()
+    val articleRDD = sc.parallelize(list).repartition(args(2).toInt).cache()
     // generate tdidf
     val words = articleRDD.map(article => article.title.filter(c => (c >= 'a' && c <= 'z') ||
       (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')).split(" ").toSeq)
