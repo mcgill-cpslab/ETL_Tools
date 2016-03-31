@@ -29,6 +29,7 @@ object ConvertToLabeledData {
 
       }
     }
+    println(list.size + "===========")
     //generate rdd
     val sc = new SparkContext
     val articleRDD = sc.parallelize(list).repartition(args(2).toInt).cache()
