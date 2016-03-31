@@ -14,21 +14,16 @@ object ConvertToLabeledData {
 
   def main(args: Array[String]): Unit = {
     val list = new ListBuffer[Article]
-    var state = 0 // 0 - for title 1 - for year
     var title: String = null
     var year: Int = 0
     for (line <- Source.fromFile(args(0)).getLines()) {
       val trimmedLine = line.trim
       if (line.startsWith("<title>")) {
-        require(state == 0)
         title = trimmedLine.substring(7, trimmedLine.length - 8)
-        state = 1
       } else {
         if (line.startsWith("<year>")) {
-          require(state == 1)
           year = trimmedLine.substring(6, trimmedLine.length - 7).toInt
           list += Article(year, title)
-          state = 0
         }
       }
     }
