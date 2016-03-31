@@ -20,12 +20,12 @@ object ConvertToLabeledData {
     for (line <- Source.fromFile(args(0)).getLines()) {
       if (line.startsWith("<title>")) {
         require(state == 0)
-        title = line.substring(7, line.length - 8)
+        title = line.trim.substring(7, line.length - 8)
         state = 1
       } else {
         if (line.startsWith("<year>")) {
           require(state == 1)
-          year = line.substring(6, line.length - 7).toInt
+          year = line.trim.substring(6, line.length - 7).toInt
           list += Article(year, title)
           state = 0
         }
