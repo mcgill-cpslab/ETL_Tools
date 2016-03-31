@@ -37,6 +37,7 @@ object ConvertToLabeledData {
       (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')).split(" ").toSeq)
     val hashingTF = new HashingTF()
     val tf = hashingTF.transform(words)
+    println(tf.first().toSparse.size + "=====")
     val labeledData = articleRDD.map(article => if (article.year > 2007) 1 else 0).zip(tf).map{
       case (label, feature) => LabeledPoint(label, feature)
     }
