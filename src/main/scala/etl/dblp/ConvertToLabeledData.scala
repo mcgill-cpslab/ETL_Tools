@@ -24,7 +24,7 @@ object ConvertToLabeledData {
           title = newTitle
         case yearPattern(newYear) =>
           year = newYear.toInt
-          list += Article(year, title)
+          list += Article(year, new String(title))
         case _ =>
 
       }
@@ -35,7 +35,7 @@ object ConvertToLabeledData {
     val articleRDD = sc.parallelize(list).repartition(args(2).toInt).cache()
     // generate bag of words
     val words = articleRDD.map(article => article.title.split(" ").toSeq.map(_.toLowerCase))
-    val hashingTF = new HashingTF()
+    val hashingTF = new HashingTF(1000)
     val tf = hashingTF.transform(words)
     println(tf.first().toSparse.size + "=====")
     val labeledData = articleRDD.map(article => if (article.year > 2007) 1 else 0).zip(tf).map{
