@@ -20,7 +20,7 @@ object ConvertToNormalizedVector {
     var cnt = 0
     for (line <- Source.fromFile(trainingPath).getLines()) {
       val newArray = line.split(",").map(_.toDouble)
-      training(cnt) = newArray
+      training(cnt) = newArray.tail
       cnt += 1
     }
     cnt = 0
@@ -46,15 +46,19 @@ object ConvertToNormalizedVector {
     }
     //3. get variation
     val variation = squaredDifference.map(diff => diff / vectorArray.length)
-    variation.zipWithIndex.sortWith((a, b) => a._1 > b._1).map(_._2).take(keptDim)
+    println(s"variation length: ${variation.length}")
+    val l = variation.zipWithIndex.sortWith((a, b) => a._1 > b._1)
+    // println(s"orderd: " + l.toList.take(keptDim))
+    l.map(_._2).take(keptDim)
   }
 
   def filterVectorWithSpecifiedDim(
       trainingArray: Array[Array[Double]],
       testArray: Array[Array[Double]],
       interestedDim: mutable.HashSet[Int]): (Array[Array[Double]], Array[Array[Double]])  = {
-    (trainingArray.map(vector => vector.zipWithIndex.filter(a => interestedDim.contains(a._2)).map(_._1)),
-      testArray.map(vector => vector.zipWithIndex.filter(a => interestedDim.contains(a._2)).map(_._1)))
+    val training = trainingArray.map(vector => vector.zipWithIndex.filter(a => interestedDim.contains(a._2)))
+    val test = testArray.map(vector => vector.zipWithIndex.filter(a => interestedDim.contains(a._2)))
+    (training.map(v => v.map(_._1)), test.map(v => v.map(_._1)))
   }
 
   def outputFilter(
@@ -66,6 +70,7 @@ object ConvertToNormalizedVector {
     var cnt = 0
 
     trainingArray.foreach(vectorArray => {
+      assert(vectorArray.length == 50)
       val filteresVectorDim = vectorArray.zipWithIndex.filter(_._1 != 0).map(_._2)
       val vector = new SparseVector(cnt, size, filteresVectorDim, vectorArray.filter(_ != 0))
       cnt += 1
@@ -74,6 +79,7 @@ object ConvertToNormalizedVector {
     })
 
     testArray.foreach(vectorArray => {
+      assert(vectorArray.length == 50)
       val filteresVectorDim = vectorArray.zipWithIndex.filter(_._1 != 0).map(_._2)
       val vector = new SparseVector(cnt, size, filteresVectorDim, vectorArray.filter(_ != 0))
       cnt += 1
